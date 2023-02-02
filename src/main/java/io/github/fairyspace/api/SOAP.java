@@ -9,6 +9,7 @@ import javax.xml.bind.*;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.soap.*;
+import java.io.IOException;
 import java.net.ConnectException;
 
 @Slf4j
@@ -22,8 +23,8 @@ public class SOAP {
         return createSOAPRequest(soapRequestElem, soapResponseElem, "getPtzUri", needsAuthentification, onvifDevice);
     }
 
-    public Object createSOAPMediaRequest(Object soapRequestElem, Object soapResponseElem, boolean needsAuthentification,OnvifDevice onvifDevice) throws SOAPException, ConnectException {
-        return createSOAPRequest(soapRequestElem, soapResponseElem, "getMediaUri", needsAuthentification, onvifDevice);
+    public Object createSOAPMediaRequest(Object soapRequestElem, Object soapResponseElem,String requestUri, boolean needsAuthentification,OnvifDevice onvifDevice) throws SOAPException, ConnectException {
+        return createSOAPRequest(soapRequestElem, soapResponseElem, requestUri, needsAuthentification, onvifDevice);
     }
 
     public Object createSOAPImagingRequest(Object soapRequestElem, Object soapResponseElem, boolean needsAuthentification,OnvifDevice onvifDevice) throws SOAPException,
@@ -61,8 +62,10 @@ public class SOAP {
 
             Unmarshaller unmarshaller = JAXBContext.newInstance(soapResponseElem.getClass()).createUnmarshaller();
             try {
+                soapResponse.writeTo(System.out);
                 try {
                     soapResponseElem = unmarshaller.unmarshal(soapResponse.getSOAPBody().extractContentAsDocument());
+
                 } catch (SOAPException e) {
                     // Second try for SOAP 1.2
                     // Sorry, I don't know why it works, it just does o.o
@@ -71,10 +74,10 @@ public class SOAP {
             } catch (UnmarshalException e) {
                 // Fault soapFault = (Fault)
                 // unmarshaller.unmarshal(soapResponse.getSOAPBody().extractContentAsDocument());
-
-                // throw new SOAPFaultException(soapFault);
+                 throw  e;
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-
             return soapResponseElem;
         } catch (SOAPException e) {
             log.error("Unexpected response. Response should be from class " + soapResponseElem.getClass() + ", but response is: " + soapResponse);
